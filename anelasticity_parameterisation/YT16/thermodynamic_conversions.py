@@ -24,7 +24,7 @@ freq=0.01
 
 # Brent temperature minimization bounds
 AX=0.
-CX=2000.
+CX=3000.
 tol=1e-3
 
 # Other parameters (density, compressibility etc.):
@@ -122,7 +122,6 @@ def Vs_calc(m,T,dep):
   J1=Ju*(1.+((Ab*(tauS**alpha))/alpha)+((np.sqrt(2.*np.pi)/2.)*Ap*sigmap*(1.-erf((np.log(tauP/tauS))/(np.sqrt(2.)*sigmap)))))
 
   # include pressure and temperature-dependent alpha
-  #dV0=optimize.brent(funcV0,brack=(AY,CY),args=(P,K0,KT,),tol=tol)
   dV0=y_a*P**2 + y_b*P + y_c
   alphaP0=dV0*np.exp((grun+1.)*((dV0**(-1.))-1.))
   rhoP0=p0*dV0
@@ -136,8 +135,8 @@ def Vs_calc(m,T,dep):
 def T_calc(m,Vs,dep):
 
   # Calculate temperature from Vs based on optimisation
-  T=optimize.brent(funcVs,brack=(AX,CX),args=(Vs,m,dep,),tol=1e-3)
-
+  res=optimize.minimize_scalar(funcVs,bounds=(AX,CX),args=(Vs,m,dep,),method='bounded')
+  T=res.x
   return T
 
 def Q_calc(m,Vs,dep):
@@ -152,7 +151,8 @@ def Q_calc(m,Vs,dep):
   sol50 = solidus_50km
 
   # Initialise parameters for attenuation
-  T=optimize.brent(funcVs,brack=(AX,CX),args=(Vs,m,dep,),tol=tol)
+  res=optimize.minimize_scalar(funcVs,bounds=(AX,CX),args=(Vs,m,dep,),method='bounded')
+  T=res.x
   TK=T+273.
   Pg=(dep/30.)
   P=Pg*1.e9
@@ -213,8 +213,8 @@ def visc_calc(m,Vs,dep):
   sol50 = solidus_50km
   
   # Initialise parameters for viscosity
-  T=optimize.brent(funcVs,brack=(AX,CX),args=(Vs,m,dep,),tol=tol)
-  TK=T+273.
+  res=optimize.minimize_scalar(funcVs,bounds=(AX,CX),args=(Vs,m,dep,),method='bounded')
+  TK=res.x+273.
   Pg=(dep/30.)
   P=Pg*1.e9
 

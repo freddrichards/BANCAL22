@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.special import erf
+from math import erf
 from scipy import optimize
 
 # Input parameters
@@ -24,7 +24,7 @@ freq=0.01
 
 # Brent temperature minimization bounds
 AX=0.
-CX=2000.
+CX=3000.
 tol=1e-3
 
 # Other parameters (density, compressibility etc.):
@@ -55,7 +55,6 @@ y_c = 1.000184023114681908e+00
 
 # Set solidus temperature at 50 km depth
 solidus_50km = np.loadtxt('./data/potential_temperature/solidus_50km_temperature.T').astype(float)
-#solidus_50km = 1380
 
 # Set tansh parameters
 Ap_x0 = 9.318289237725828622e-01
@@ -140,7 +139,8 @@ def Vs_calc(m,T,dep):
 def T_calc(m,Vs,dep):
 
   # Calculate temperature from Vs based on optimisation
-  T=optimize.brent(funcVs,brack=(AX,CX),args=(Vs,m,dep,),tol=1e-3)
+  res=optimize.minimize_scalar(funcVs,bounds=(AX,CX),args=(Vs,m,dep,),method='bounded')
+  T=res.x
 
   return T
 
@@ -156,7 +156,8 @@ def Q_calc(m,Vs,dep):
   sol50 = solidus_50km
 
   # Initialise parameters for attenuation
-  T=optimize.brent(funcVs,brack=(AX,CX),args=(Vs,m,dep,),tol=tol)
+  res=optimize.minimize_scalar(funcVs,bounds=(AX,CX),args=(Vs,m,dep,),method='bounded')
+  T=res.x
   TK=T+273.
   Pg=(dep/30.)
   P=Pg*1.e9
@@ -200,8 +201,8 @@ def visc_calc(m,Vs,dep):
   sol50 = solidus_50km
   
   # Initialise parameters for viscosity
-  T=optimize.brent(funcVs,brack=(AX,CX),args=(Vs,m,dep,),tol=tol)
-  TK=T+273.
+  res=optimize.minimize_scalar(funcVs,bounds=(AX,CX),args=(Vs,m,dep,),method='bounded')
+  TK=res.x+273.
   Pg=(dep/30.)
   P=Pg*1.e9
 
