@@ -25,7 +25,6 @@ freq=0.01
 # Brent temperature minimization bounds
 AX=0.
 CX=3000.
-tol=1e-3
 
 # Other parameters (density, compressibility etc.):
 rho0=3300.
