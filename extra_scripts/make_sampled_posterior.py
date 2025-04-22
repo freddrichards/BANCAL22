@@ -11,7 +11,6 @@ config_obj.read('config.ini')
 variables = config_obj["variables"]
 date = variables["date"]
 folds = config_obj["directories"]
-fold_base = folds["base"]
 
 # read -d variable for output date
 opts, args = getopt.getopt(sys.argv[1:], "d:")
