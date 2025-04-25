@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import os
 import sys, getopt
 import configparser
@@ -28,41 +29,75 @@ os.makedirs(fold_samples_output, exist_ok=True)
 ###############################################################################################
 
 def load_data():
-
-    data = np.loadtxt(os.path.join(fold_BANCAL22_data, 'samples_postburnin.csv'), skiprows=1)
-
+    data = pd.read_csv(os.path.join(fold_BANCAL22_data, 'samples_postburnin.csv'), delimiter="\t")
     return data
 
-data = load_data()
+
+# def load_data():
+#
+#     data = np.loadtxt(os.path.join(fold_BANCAL22_data, 'samples_postburnin.csv'), skiprows=1)
+#
+#     return data
 
 ###############################################################################################
 # 3. GENERATE RANDOM SAMPLE OF POSTERIOR ANELASTICITY MODELS AND FIND MAP
 ###############################################################################################
 
-def find_MAP():
+def find_summary_model():
+    if os.path.exists(fold_BANCAL22_data+"/summary_model.txt"):
+        print("mean model exists, skipping..")
+        data_summary=1
+        exists=1
+    else:
+        data=load_data()
+        data_mean=data.mean(axis=0)
+        data_std=data.std(axis=0)
+        exists=0
+        data_summary=pd.concat([data_mean, data_std], axis=1).T
+    return data_summary, exists
 
-    outfile = os.path.join(fold_samples_output, 'MAP_model.txt')
-    if os.path.exists(outfile):
-        return None
-    idx_MAP = np.argmax(data[:,0])  # find MAP model by sorting data by posterior probability and extracting the maximum
-    data_MAP = data.copy()[idx_MAP,np.arange(0,8,1)]  # get MAP model probability and parameters
-    np.savetxt(outfile, data_MAP, delimiter='\t')  # save MAP model
+def save_summary(data_summary):
+    data_summary.to_csv(fold_BANCAL22_data+"/summary_model.txt", sep="\t", float_format="%20.15f", index=False)
+    
+def find_MAP_model():
 
-    return data_MAP
+    if os.path.exists(fold_BANCAL22_data+"/MAP_model.txt"):
+        print("MAP model exists, skipping..")
+        data_MAP=1
+        exists=1
+    else:
+        data=load_data()
+        idx=np.argmax(data['Posterior']) # find MAP model by sorting data by posterior probability and extracting the maximum
+        data_MAP=data.iloc[idx] # get MAP model probability and parameters
+        exists=0
+    return data_MAP, exists
+    
+def save_MAP(data_MAP):
+    data_MAP.to_csv(fold_BANCAL22_data+"/MAP_model.txt", sep="\t", header=False)
+    
+def generate_data_sample(sample_size=1000):
+    if os.path.exists(fold_BANCAL22_data+"/data_sample.txt"):
+        print("data sample exists, skipping..")
+        data_sample=1
+        exists=1
+    else:
+        data=load_data()
+        data_sample = data.sample(n = sample_size)
+        exists=0
+    return data_sample, exists
 
-def generate_sample():
+def save_data_sample(data_sample):
+    data_sample.to_csv(fold_BANCAL22_data+"/data_sample.txt", sep="\t")
+    
+data_sample, exists = generate_data_sample()
 
-    outfile = os.path.join(fold_samples_output, 'data_sample.txt')
-    if os.path.exists(outfile):
-        return None
-    sample_size = 1000
-    total_samples = np.shape(data)[0]
-    idx_sample = np.random.default_rng().integers(low=0, high=total_samples, size=sample_size)
-    data_sample = data.copy()[idx_sample,:]
-    data_sample = data_sample[:,np.arange(0,8,1)]
-    np.savetxt(outfile, data_sample, delimiter='\t')
+if exists < 1:
+    save_data_sample(data_sample)
 
-    return data_sample
+data_MAP, exists = find_MAP_model()
+if exists < 1:
+    save_MAP(data_MAP)
 
-find_MAP()
-generate_sample()
+data_summary, exists = find_summary_model()
+if exists < 1:
+    save_summary(data_summary)
